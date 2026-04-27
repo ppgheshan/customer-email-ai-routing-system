@@ -1,0 +1,423 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -656,
+        288
+      ],
+      "id": "9646663a-7c8b-48e3-9f90-c99d0232dbbe",
+      "name": "Gmail Trigger",
+      "alwaysOutputData": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "KguVlO3KA3dREAza",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -432,
+        512
+      ],
+      "id": "77ba98a7-4afb-407a-9ffa-0145639e3879",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "UoIqzecY10TmjXT7",
+          "name": "n8n free OpenAI API credits"
+        }
+      },
+      "notes": "=Classify this email into one category:\n1. Fault\n2. Good review\n3. Package change\n4. Other\n\nEmail: {{$json[\"text\"]}}\n\nOnly return one word."
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Classify this email into one of these categories: package_change, good_review, fault, or other.\n\nEmail Subject: {{ $json.headers.subject }}\nEmail From: {{ $json.from.text }}\nEmail Content: {{ $json.text }}\n\nSet the category field to exactly one of these values: package_change, good_review, fault, other",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an email classification assistant. Analyze emails and categorize them accurately. Categories:\n- package_change: Emails about delivery changes, shipping updates, address modifications\n- good_review: Positive feedback, testimonials, satisfied customer reviews\n- fault: Complaints, issues, problems, negative feedback\n- other: Everything else"
+        }
+      },
+      "id": "9111d4f9-f70c-420d-b697-ec76c43abd84",
+      "name": "Classify Email",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -400,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"category\": \"package_change\"\n}",
+        "autoFix": true
+      },
+      "id": "b9956d0b-2805-441a-a37c-34dca0a93aaa",
+      "name": "Email Category Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -304,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.category }}",
+                    "rightValue": "package_change",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "664936d5-d2ac-46da-ae61-d93f09a4c1b1"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.category }}",
+                    "rightValue": "good_review",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "fd36c507-ea1b-48d3-bf4c-79e1e54787c6"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.category }}",
+                    "rightValue": "fault",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "cb66ff89-a597-4560-97a8-3e3aa53819d5"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.category }}",
+                    "rightValue": "other",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "faf39fa7-27da-4132-bf3a-54f10155bc64"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b8f5624f-9e3b-4d42-be0b-1446d7f6a68e",
+      "name": "Route by Category",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        64,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "053ae6f6-7056-48c0-b6dd-a613addbcebe",
+      "name": "Parser Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -224,
+        720
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "UoIqzecY10TmjXT7",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "heshfree2020@gmail.com",
+        "subject": "=FWD: {{ $('Gmail Trigger').item.json.headers.subject }}",
+        "emailType": "text",
+        "message": "=Original Email:\nFrom: {{ $('Gmail Trigger').item.json.from.text }}\nSubject: {{ $('Gmail Trigger').item.json.headers.subject }}\n\n{{ $('Gmail Trigger').item.json.text }}",
+        "options": {}
+      },
+      "id": "3a8ce4e7-818f-499e-9405-16e91e00318e",
+      "name": "Forward to Package Team",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        288,
+        0
+      ],
+      "webhookId": "daff59a1-7f8a-4c7d-93a5-119a64d0fa40",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "KguVlO3KA3dREAza",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "fheshangayya@gmail.com",
+        "subject": "=FWD: {{ $('Gmail Trigger').item.json.headers.subject }}",
+        "emailType": "text",
+        "message": "=Original Email:\nFrom: {{ $('Gmail Trigger').item.json.from.text }}\nSubject: {{ $('Gmail Trigger').item.json.headers.subject }}\n\n{{ $('Gmail Trigger').item.json.text }}",
+        "options": {}
+      },
+      "id": "f620f8fc-da67-4009-9d25-ebd88727e9be",
+      "name": "Forward to Marketing Team",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        288,
+        192
+      ],
+      "webhookId": "3f671825-231e-446b-bb07-dec4e2893773",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "KguVlO3KA3dREAza",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "heshg2@gmail.com",
+        "subject": "=FWD: {{ $('Gmail Trigger').item.json.headers.subject }}",
+        "emailType": "text",
+        "message": "=Original Email:\nFrom: {{ $('Gmail Trigger').item.json.from.text }}\nSubject: {{ $('Gmail Trigger').item.json.headers.subject }}\n\n{{ $('Gmail Trigger').item.json.text }}",
+        "options": {}
+      },
+      "id": "97936af9-c474-47da-8d5f-4851e183a618",
+      "name": "Forward to Support Team",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        288,
+        384
+      ],
+      "webhookId": "eddff97e-79c1-467f-8ec5-6311e9ce148f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "KguVlO3KA3dREAza",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "randikabandara2020@gmail.com",
+        "subject": "=FWD: {{ $('Gmail Trigger').item.json.headers.subject }}",
+        "emailType": "text",
+        "message": "=Original Email:\nFrom: {{ $('Gmail Trigger').item.json.from.text }}\nSubject: {{ $('Gmail Trigger').item.json.headers.subject }}\n\n{{ $('Gmail Trigger').item.json.text }}",
+        "options": {}
+      },
+      "id": "01114243-189c-4d1a-be91-5718455d05b2",
+      "name": "Forward to General Team",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        288,
+        576
+      ],
+      "webhookId": "4597355b-bfca-49d2-9466-6f565e8dfc4f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "KguVlO3KA3dREAza",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Classify Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Classify Email",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Email": {
+      "main": [
+        [
+          {
+            "node": "Route by Category",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Category Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Classify Email",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Category": {
+      "main": [
+        [
+          {
+            "node": "Forward to Package Team",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Forward to Marketing Team",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Forward to Support Team",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Forward to General Team",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parser Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email Category Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "87f75881-5b48-4cfa-aa13-d2215e5f7005",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "610f7b2d2760244e1805cf76debf34fafcb58f1224656918e692d4c167fa43f9"
+  },
+  "id": "NrAsUBHu5pLKzGb1",
+  "tags": []
+}
