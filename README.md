@@ -2,7 +2,7 @@
 
 ## Workflow Screenshot
 
-![Workflow](download.png)
+![Workflow](download.jpg)
 This project automates customer email handling using AI and n8n.
 
 ## Problem
