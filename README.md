@@ -1,5 +1,8 @@
 # AI Email Classification & Routing with n8n
 
+## Workflow Screenshot
+
+![Workflow](download.png)
 This project automates customer email handling using AI and n8n.
 
 ## Problem
